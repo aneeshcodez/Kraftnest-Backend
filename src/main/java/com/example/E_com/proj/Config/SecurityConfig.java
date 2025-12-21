@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -57,16 +58,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+
+                        // PUBLIC AUTH APIs
                         .requestMatchers(
                                 "/api/new",
-                                "/api/authenticate",
+                                "/api/authenticate"
+                        ).permitAll()
+
+                        // PUBLIC PRODUCT READ APIs
+                        .requestMatchers(HttpMethod.GET,
                                 "/api/products",
                                 "/api/products/search",
                                 "/api/product/*",
                                 "/api/product/*/image"
                         ).permitAll()
+
+                        // EVERYTHING ELSE NEEDS AUTH
                         .anyRequest().authenticated()
                 )
+
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
