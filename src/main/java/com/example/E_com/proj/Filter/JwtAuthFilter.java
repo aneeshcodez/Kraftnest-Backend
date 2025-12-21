@@ -18,7 +18,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 // This filter performs token verification & user authentication for every request.
-
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -29,10 +28,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private UserInfoUserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+
+        String path = request.getServletPath();
+        if (path.equals("/api/authenticate")
+                || path.equals("/api/new")
+                || path.startsWith("/api/products")
+                || path.startsWith("/api/product")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         final String authHeader = request.getHeader("Authorization");
         String token = null;
@@ -44,16 +61,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 username = jwtService.extractUsername(token);
             } catch (Exception e) {
-                // Token malformed → continue without authentication
                 filterChain.doFilter(request, response);
                 return;
             }
         }
 
-        // Authenticate user only if not already authenticated
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        // Authenticate user
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails =
+                    userDetailsService.loadUserByUsername(username);
 
             if (jwtService.validateToken(token, userDetails)) {
 
@@ -68,7 +86,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authToken);
             }
         }
 
