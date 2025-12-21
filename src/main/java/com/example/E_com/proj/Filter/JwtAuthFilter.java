@@ -44,12 +44,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         if (path.equals("/api/authenticate")
                 || path.equals("/api/new")
-                || path.startsWith("/api/products")
-                || path.startsWith("/api/product")) {
+                || path.startsWith("/api/products")) {
 
             filterChain.doFilter(request, response);
             return;
         }
+
 
         final String authHeader = request.getHeader("Authorization");
         String token = null;
